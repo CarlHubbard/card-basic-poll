@@ -1,0 +1,247 @@
+<link rel="import" href="../polymer-channels-card/polymer-channels-card.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<dom-module id="card-basic-poll-composer">
+
+
+   <template>
+    <style>
+      .container {
+        display: -ms-flexbox;
+        display: -webkit-flex;
+        display: flex;
+        -ms-flex-direction: row;
+        -webkit-flex-direction: row;
+        flex-direction: row;
+        -ms-flex-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        padding: 10px 3px;
+      }
+      .flex {
+        -ms-flex: 1 1 0.000000001px;
+        -webkit-flex: 1;
+        flex: 1;
+        -webkit-flex-basis: 0.000000001px;
+        flex-basis: 0.000000001px;
+      }
+      .buttonPanel {
+        padding-left: 15px;
+      }
+      input {
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+        border: none;
+        border-bottom: 3px solid #e5e5e5;
+        background: transparent;
+        font-size: 16px;
+        font-weight: 300;
+        font-family: "Roboto", sans-serif;
+        padding: 10px 5px;
+        color: #000;
+      }
+    </style>
+    <div class="container">
+      <div class="flex" style="position: relative;">
+        <input id="txt" placeholder="Enter your question" on-keydown="onKeydown">
+      </div>
+      <div class="buttonPanel">
+        <paper-button on-click="onSend" raised>Send</button>
+      </div>
+    </div>
+  </template>
+  <script>
+    class CardBasicPollComposer extends PolymerChannelsCardComposer {
+      static get is() { return 'card-basic-poll-composer'; }
+      onKeydown(event) {
+        if (event.keyCode === 13) {
+          this.onSend();
+        }
+      }
+      onSend() {
+        const message = this.$.txt.value.trim();
+        if (message.length > 0) {
+          this.send({ question: message, options: [], votes: []  });
+          this.$.txt.value = '';
+        }
+      }
+    }
+    window.customElements.define(CardBasicPollComposer.is, CardBasicPollComposer);
+  </script> 
+</dom-module>
+
+<dom-module id="card-basic-poll-viewer">
+  <template>
+    <style>
+      .container {
+        border: 1px solid #ccc;
+        padding: 4px;
+      }
+      .question {
+        font-size: 125%;
+        margin: 0 0 5px 30px;
+      }
+      .listItem {
+        display: -ms-flexbox;
+        display: -webkit-flex;
+        display: flex;
+        -ms-flex-direction: row;
+        -webkit-flex-direction: row;
+        flex-direction: row;
+        -ms-flex-align: center;
+        -webkit-align-items: center;
+        align-items: center;
+        padding: 3px;
+      }
+      .flex {
+        -ms-flex: 1 1 0.000000001px;
+        -webkit-flex: 1;
+        flex: 1;
+        -webkit-flex-basis: 0.000000001px;
+        flex-basis: 0.000000001px;
+      }
+      .checkContainer {
+        cursor: pointer;
+        margin: 0 5px 0 0;
+        vertical-align: top;
+      }
+      .messageContainer {
+        vertical-align: top;
+      }
+      .votesContainer {
+        margin: 0 0 0 10px;
+        vertical-align: top;
+      }
+      .entryContainer {
+        margin: 5px 10px 5px 30px;
+        position: relative;
+      }
+      #entryText {
+        width: 100%;
+        font-size: 14px;
+      }
+    </style>
+    <div class="container">
+      <div class="question">{{data.question}}</div>
+      <div class="innerContainer">
+        <template is="dom-repeat" items="{{data.options}}" mutable-data>
+          <div class="listItem">
+            <div class="checkContainer">
+              <iron-icon icon="[[getCheckboxIcon(item.option)]]" on-click="onItemCheckboxClick"></iron-icon>
+            </div>
+            <div class="messageContainer">{{item.option}}</div>
+            <div class="votesContainer">[[getTotalVotes(item.option)]]</div>
+          </div>
+        </template>
+      </div>
+      <div class="entryContainer">
+        <input id="entryText" type="text" placeholder="Enter new option and hit ENTER" on-keydown="onEntryKeyDown">
+      </div>
+    </div>
+  </template>
+  <script>
+    class CardBasicPollViewer extends PolymerChannelsCardViewer {
+      static get is() { return 'card-basic-poll-viewer'; }
+
+      getCheckboxIcon(option) {
+        let noVote = true;
+          console.log(option + "UI just set this to true " + noVote);
+
+        for (let i=0; i < this.data.votes.length; i++)  {
+          if (this.data.votes[i].id == option + this.channel.me.identity.publicKey)  {
+            noVote = false;
+            console.log(option + "UI just set this to false because found a vote " + noVote);
+            console.log(option + "UI just set the box based on " + this.data.votes[i].vote);
+            console.log("--------------------");
+            return this.data.votes[i].vote ? "icons:add-circle" : "icons:add-circle-outline";
+          }
+        }
+        if (noVote) {
+          console.log(option +"UI Got here because there are no votes at all becuse this is 0 " + this.data.votes.length);
+          console.log(option + "UI Or because there was no match");
+          console.log(option + "UI in either case just set the box to blank ");
+          console.log("--------------------");
+          return "icons:add-circle-outline";
+        }
+      }
+
+      getTotalVotes(option) {
+        var totalVotes = 0;
+        console.log("Getting total votes for this option: " + option);
+        console.log("Here's the full votes array: " + this.data.votes);
+        for (let j=0; j < this.data.votes.length; j++)  {
+          console.log("the vote being compared: " + this.data.votes[j]);
+          if (this.data.votes[j].id.includes(option) && this.data.votes[j].vote) {
+            console.log("Incrementing votes");
+            totalVotes++;
+          }
+        }
+        console.log("----------------------");
+        return totalVotes;
+      }
+
+
+      onEntryKeyDown(event) {
+        if (event.keyCode === 13) {
+          const text = this.$.entryText.value.trim();
+          if (text.length > 0) {
+            this.stateController.arrayInsert("options", { option: text}).then(() => {
+              this.$.entryText.value = '';
+            });
+          }
+        }
+      }
+
+      onItemCheckboxClick(event) {
+        let noVote = true;
+        console.log(event.model.item.option + "on click just set this to true " + noVote);
+        for (let n=0; n < this.data.votes.length; n++)  {
+          if (this.data.votes[n].id == event.model.item.option + this.channel.me.identity.publicKey)  {
+            noVote = false;
+            console.log(event.model.item.option + "on click just set this to false because found a vote" + noVote);
+            console.log("the vote was " + this.data.votes[n]);
+            var newVote = !this.data.votes[n].vote
+            this.stateController.arrayElementUpdate('votes', this.data.votes[n].id, "vote", newVote );
+            console.log(event.model.item.option + "on click Updated the vote to " + newVote);
+            console.log("--------------------");
+            break;
+          }
+        }
+        if (noVote)  {
+          console.log(event.model.item.option + "on click Got here because there are no votes at all becuse this is 0" + this.data.votes.length);
+          console.log(event.model.item.option + "On click Or because there was no match");
+          console.log(event.model.item.option + "on click in either case just added a true vote ");
+          console.log(event.model.item.option + "with this id: " + event.model.item.option + this.channel.me.identity.publicKey);
+          console.log("--------------------");
+          this.stateController.arrayInsert("votes", { id: event.model.item.option + this.channel.me.identity.publicKey, vote: true})
+        }
+      }
+
+      updateRecord(path, recordId, index, updatedRecordValue, elementPath, elementValue) {
+        console.log("In the updateRecord function")
+        super.updateRecord(path, recordId, index, updatedRecordValue, elementPath, elementValue);
+        console.log("path " + path);
+        if (path === 'votes') {
+          this.notifyPath('data.options');
+          console.log("kicked the options array to update the template")
+          console.log("--------------------");
+        }
+      }
+
+      spliceArray(path, index, removeCount, record) {
+                console.log("In the splicedArray function")
+
+        super.spliceArray(path, index, removeCount, record);
+        if (path === 'votes') {
+          this.notifyPath('data.options');
+          console.log("kicked the options array to update the template")
+          console.log("--------------------");
+        }
+      }
+    }
+    window.customElements.define(CardBasicPollViewer.is, CardBasicPollViewer);
+  </script>
+</dom-module>
